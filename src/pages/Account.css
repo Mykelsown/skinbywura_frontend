@@ -1,0 +1,89 @@
+.account-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 40px;
+}
+
+.account-head h1 {
+  font-size: 2rem;
+  margin-top: 8px;
+}
+
+.account-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+.account-card {
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-md);
+  padding: 26px;
+}
+
+.account-card h3 {
+  font-size: 1.1rem;
+}
+
+.account-card dl div {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+  font-size: 0.9rem;
+}
+
+.account-card dt {
+  color: var(--ink-soft);
+}
+
+.account-card dd {
+  font-weight: 600;
+}
+
+.account-empty {
+  margin-top: 14px;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.wishlist-list {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wishlist-list li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+
+.container-narrow {
+  max-width: 600px;
+}
+
+.account-page h1 {
+  font-size: 2rem;
+  margin-top: 8px;
+  margin-bottom: 30px;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  margin: 6px 0 4px;
+}
+
+@media (max-width: 880px) {
+  .account-grid {
+    grid-template-columns: 1fr;
+  }
+}
