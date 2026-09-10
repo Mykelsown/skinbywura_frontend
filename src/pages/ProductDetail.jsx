@@ -1,21 +1,56 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
-import products from "../data/products.js";
 import reviews from "../data/reviews.js";
 import { useCart } from "../context/CartContext.jsx";
+import { fetchProductById, fetchProducts } from "../lib/api.js";
 import { formatNaira } from "../lib/format.js";
 import ProductCard from "../components/ProductCard.jsx";
 import "./ProductDetail.css";
 
 export default function ProductDetail() {
   const { id } = useParams();
-  const product = products.find((p) => p.id === id);
+  const [product, setProduct] = useState(null);
+  const [allProducts, setAllProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
   const [qty, setQty] = useState(1);
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadProduct() {
+      try {
+        const [productData, allData] = await Promise.all([
+          fetchProductById(id),
+          fetchProducts(),
+        ]);
+
+        if (active) {
+          setProduct(productData);
+          setAllProducts(allData);
+        }
+      } catch (error) {
+        console.error("Failed to load product", error);
+        if (active) {
+          setProduct(null);
+          setAllProducts([]);
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadProduct();
+
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  if (loading) return <div className="section"><div className="container"><p>Loading product...</p></div></div>;
   if (!product) return <Navigate to="/products" replace />;
 
-  const related = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
+  const related = allProducts.filter((p) => p.category === product.category && Number(p.id) !== Number(product.id)).slice(0, 4);
   const productReviews = reviews.filter((r) => r.productName === product.name);
 
   return (

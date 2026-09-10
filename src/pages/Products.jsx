@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard.jsx";
-import products, { categories } from "../data/products.js";
+import { fetchProducts } from "../lib/api.js";
 import "./Products.css";
 
 const SORTS = [
@@ -13,16 +13,42 @@ const SORTS = [
 
 export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [products, setProducts] = useState([]);
   const [category, setCategory] = useState(searchParams.get("category") || "All");
   const [sort, setSort] = useState("featured");
   const [maxPrice, setMaxPrice] = useState(15000);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const query = searchParams.get("q") || "";
 
   useEffect(() => {
     const cat = searchParams.get("category");
     if (cat) setCategory(cat);
   }, [searchParams]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadProducts() {
+      try {
+        const data = await fetchProducts();
+        if (active) setProducts(data);
+      } catch (error) {
+        console.error("Failed to load products", error);
+        if (active) setProducts([]);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadProducts();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const categories = ["All", ...Array.from(new Set(products.map((p) => p.category)))];
 
   const filtered = useMemo(() => {
     let list = products.filter((p) => p.price <= maxPrice);
@@ -112,7 +138,11 @@ export default function Products() {
           </aside>
 
           <div className="products-results">
-            {filtered.length === 0 ? (
+            {loading ? (
+              <div className="empty-state">
+                <h3>Loading products...</h3>
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="empty-state">
                 <h3>No products match yet</h3>
                 <p>Try widening your price range or picking a different category.</p>

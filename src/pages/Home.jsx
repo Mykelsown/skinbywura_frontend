@@ -1,15 +1,41 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Ticker from "../components/Ticker.jsx";
 import ProductCard from "../components/ProductCard.jsx";
-import products from "../data/products.js";
 import reviews from "../data/reviews.js";
+import { fetchProducts } from "../lib/api.js";
 import "./Home.css";
 
-const featured = products.filter((p) => p.badge === "Best Seller").concat(
-  products.filter((p) => p.badge === "New")
-).slice(0, 4);
-
 export default function Home() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadProducts() {
+      try {
+        const data = await fetchProducts();
+        if (active) setProducts(data);
+      } catch (error) {
+        console.error("Failed to load featured products", error);
+        if (active) setProducts([]);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadProducts();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const featured = products.filter((p) => p.badge === "Best Seller").concat(
+    products.filter((p) => p.badge === "New")
+  ).slice(0, 4);
+
   return (
     <div>
       <section className="hero">
@@ -58,11 +84,15 @@ export default function Home() {
             <h2>The shelf everyone's restocking</h2>
             <p>The four products our community can't stop reordering, picked fresh this month.</p>
           </div>
-          <div className="grid-products">
-            {featured.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
+          {loading ? (
+            <p>Loading products...</p>
+          ) : (
+            <div className="grid-products">
+              {featured.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          )}
           <div className="section-cta">
             <Link to="/products" className="btn">View all products</Link>
           </div>

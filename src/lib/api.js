@@ -1,13 +1,9 @@
 // ---------------------------------------------------------------------------
 // API abstraction layer.
 //
-// Every function here returns a Promise and talks to localStorage for now.
-// When a real backend is ready, swap the body of each function for a
-// `fetch("/api/...")` call — nothing in the components or context providers
-// needs to change, since they only ever call through this module.
+// Live product calls route to the Go backend while the rest of the app remains
+// backed by localStorage until the other endpoints are implemented.
 // ---------------------------------------------------------------------------
-
-import productCatalogue from "../data/products.js";
 
 const STORAGE_KEYS = {
   cart: "sbw_cart",
@@ -38,14 +34,45 @@ function delay(ms = 150) {
 
 // ---- Products --------------------------------------------------------
 
+function normalizeProduct(product = {}) {
+  return {
+    ...product,
+    id: product.id,
+    image: product.image ?? product.image_url ?? "",
+    compareAtPrice: product.compareAtPrice ?? product.compare_at_price ?? null,
+    reviewCount: product.reviewCount ?? product.review_count ?? 0,
+    skinType: product.skinType ?? product.skin_type ?? "",
+    tags: Array.isArray(product.tags) ? product.tags : [],
+  };
+}
+
+function normalizeProducts(data) {
+  if (Array.isArray(data)) return data.map(normalizeProduct);
+  if (Array.isArray(data?.products)) return data.products.map(normalizeProduct);
+  return [];
+}
+
 export async function fetchProducts() {
-  await delay();
-  return productCatalogue;
+  const response = await fetch("/api/products");
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch products: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return normalizeProducts(data);
 }
 
 export async function fetchProductById(id) {
-  await delay();
-  return productCatalogue.find((p) => p.id === id) || null;
+  const response = await fetch(`/api/products/${id}`);
+
+  if (!response.ok) {
+    if (response.status === 404) return null;
+    throw new Error(`Failed to fetch product ${id}: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return normalizeProduct(data);
 }
 
 // ---- Cart --------------------------------------------------------------
