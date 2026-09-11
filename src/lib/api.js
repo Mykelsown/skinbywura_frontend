@@ -8,7 +8,6 @@
 const STORAGE_KEYS = {
   cart: "sbw_cart",
   wishlist: "sbw_wishlist",
-  user: "sbw_user",
 };
 
 function read(key, fallback) {
@@ -101,30 +100,75 @@ export async function saveWishlist(items) {
   return items;
 }
 
-// ---- Auth (mock) -----------------------------------------------------
+// ---- Auth ---------------------------------------------------------------
+
+async function parseError(response, fallbackMessage) {
+  try {
+    const payload = await response.json();
+    return payload?.error || fallbackMessage;
+  } catch {
+    return fallbackMessage;
+  }
+}
 
 export async function getCurrentUser() {
-  await delay(80);
-  return read(STORAGE_KEYS.user, null);
+  const response = await fetch("/api/auth/me", { credentials: "include" });
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(await parseError(response, "Unable to load account"));
+  }
+
+  return response.json();
 }
 
-export async function login({ email }) {
-  await delay(400);
-  const user = { email, name: email.split("@")[0], joined: new Date().toISOString() };
-  write(STORAGE_KEYS.user, user);
-  return user;
+export async function login({ email, password }) {
+  const response = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response, "invalid email or password"));
+  }
+
+  return response.json();
 }
 
-export async function signup({ name, email }) {
-  await delay(400);
-  const user = { name, email, joined: new Date().toISOString() };
-  write(STORAGE_KEYS.user, user);
-  return user;
+export async function signup({ name, email, password }) {
+  const response = await fetch("/api/auth/signup", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ name, email, password }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response, "Unable to create account"));
+  }
+
+  return response.json();
 }
 
 export async function logout() {
-  await delay(150);
-  localStorage.removeItem(STORAGE_KEYS.user);
+  const response = await fetch("/api/auth/logout", {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response, "Failed to log out"));
+  }
+
   return true;
 }
 
