@@ -76,21 +76,12 @@ export async function fetchProductById(id) {
 
 // ---- Cart --------------------------------------------------------------
 
-async function parseApiError(response, fallbackMessage) {
-  try {
-    const payload = await response.json();
-    return payload?.error || fallbackMessage;
-  } catch {
-    return fallbackMessage;
-  }
-}
-
 export async function getCart() {
   const response = await fetch("/api/cart", { credentials: "include" });
 
   if (response.status === 401) return [];
   if (!response.ok) {
-    throw new Error(await parseApiError(response, "Unable to load cart"));
+    throw new Error(await parseError(response, "Unable to load cart"));
   }
 
   const data = await response.json();
@@ -106,7 +97,7 @@ export async function saveCart(items) {
   });
 
   if (!response.ok) {
-    throw new Error(await parseApiError(response, "Unable to save cart"));
+    throw new Error(await parseError(response, "Unable to save cart"));
   }
 
   const data = await response.json();
@@ -120,7 +111,7 @@ export async function getWishlist() {
 
   if (response.status === 401) return [];
   if (!response.ok) {
-    throw new Error(await parseApiError(response, "Unable to load wishlist"));
+    throw new Error(await parseError(response, "Unable to load wishlist"));
   }
 
   const data = await response.json();
@@ -136,7 +127,33 @@ export async function saveWishlist(items) {
   });
 
   if (!response.ok) {
-    throw new Error(await parseApiError(response, "Unable to save wishlist"));
+    throw new Error(await parseError(response, "Unable to save wishlist"));
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
+}
+
+export async function checkout() {
+  const response = await fetch("/api/orders", {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response, "Unable to complete checkout"));
+  }
+
+  const data = await response.json();
+  return data || null;
+}
+
+export async function fetchOrders() {
+  const response = await fetch("/api/orders", { credentials: "include" });
+
+  if (response.status === 401) return [];
+  if (!response.ok) {
+    throw new Error(await parseError(response, "Unable to load orders"));
   }
 
   const data = await response.json();
