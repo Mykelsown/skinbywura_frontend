@@ -8,10 +8,22 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.getCurrentUser().then((u) => {
-      setUser(u);
-      setLoading(false);
-    });
+    let cancelled = false;
+
+    api.getCurrentUser()
+      .then((u) => {
+        if (!cancelled) setUser(u);
+      })
+      .catch(() => {
+        if (!cancelled) setUser(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const login = useCallback(async (credentials) => {
