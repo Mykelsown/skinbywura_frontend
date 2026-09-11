@@ -1,10 +1,29 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
+import { checkout } from "../lib/api.js";
 import { formatNaira } from "../lib/format.js";
 import "./CartDrawer.css";
 
 export default function CartDrawer() {
-  const { items, subtotal, isCartOpen, closeCart, removeItem, updateQty } = useCart();
+  const { items, subtotal, isCartOpen, closeCart, removeItem, updateQty, clearCart } = useCart();
+  const [checkoutState, setCheckoutState] = useState({ type: "idle", message: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleCheckout = async () => {
+    setIsSubmitting(true);
+    setCheckoutState({ type: "idle", message: "" });
+
+    try {
+      await checkout();
+      clearCart();
+      setCheckoutState({ type: "success", message: "Order placed successfully!" });
+    } catch (error) {
+      setCheckoutState({ type: "error", message: error.message || "Unable to complete checkout" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <>
@@ -61,8 +80,13 @@ export default function CartDrawer() {
               <strong>{formatNaira(subtotal)}</strong>
             </div>
             <p className="cart-note">Shipping and taxes calculated at checkout.</p>
-            <button className="btn btn-coral" style={{ width: "100%" }} onClick={closeCart}>
-              Checkout
+            {checkoutState.type !== "idle" && (
+              <p className={checkoutState.type === "success" ? "account-success" : "account-error"}>
+                {checkoutState.message}
+              </p>
+            )}
+            <button className="btn btn-coral" style={{ width: "100%" }} onClick={handleCheckout} disabled={isSubmitting}>
+              {isSubmitting ? "Processing..." : "Checkout"}
             </button>
             <Link to="/products" className="btn btn-outline" style={{ width: "100%", marginTop: 10 }} onClick={closeCart}>
               Continue shopping
