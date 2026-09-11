@@ -17,14 +17,22 @@ export default function Signup() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
-    if (!form.name || !form.email || form.password.length < 6) {
+
+    if (!form.name.trim() || !form.email.trim() || form.password.trim().length < 6) {
       setError("Fill every field — passwords need at least 6 characters.");
       return;
     }
+
     setLoading(true);
-    await signup(form);
-    setLoading(false);
-    navigate("/profile");
+
+    try {
+      await signup(form);
+      navigate("/profile");
+    } catch (err) {
+      setError(err?.message || "Unable to create account.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

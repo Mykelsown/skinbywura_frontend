@@ -13,14 +13,22 @@ export default function Login() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
-    if (!form.email || !form.password) {
+
+    if (!form.email.trim() || !form.password.trim()) {
       setError("Enter your email and password to continue.");
       return;
     }
+
     setLoading(true);
-    await login(form);
-    setLoading(false);
-    navigate("/profile");
+
+    try {
+      await login(form);
+      navigate("/profile");
+    } catch (err) {
+      setError(err?.message || "Unable to sign in.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
