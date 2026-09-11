@@ -76,28 +76,71 @@ export async function fetchProductById(id) {
 
 // ---- Cart --------------------------------------------------------------
 
+async function parseApiError(response, fallbackMessage) {
+  try {
+    const payload = await response.json();
+    return payload?.error || fallbackMessage;
+  } catch {
+    return fallbackMessage;
+  }
+}
+
 export async function getCart() {
-  await delay(80);
-  return read(STORAGE_KEYS.cart, []);
+  const response = await fetch("/api/cart", { credentials: "include" });
+
+  if (response.status === 401) return [];
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, "Unable to load cart"));
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
 }
 
 export async function saveCart(items) {
-  await delay(80);
-  write(STORAGE_KEYS.cart, items);
-  return items;
+  const response = await fetch("/api/cart", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(items),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, "Unable to save cart"));
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
 }
 
 // ---- Wishlist ------------------------------------------------------------
 
 export async function getWishlist() {
-  await delay(80);
-  return read(STORAGE_KEYS.wishlist, []);
+  const response = await fetch("/api/wishlist", { credentials: "include" });
+
+  if (response.status === 401) return [];
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, "Unable to load wishlist"));
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
 }
 
 export async function saveWishlist(items) {
-  await delay(80);
-  write(STORAGE_KEYS.wishlist, items);
-  return items;
+  const response = await fetch("/api/wishlist", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(items),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, "Unable to save wishlist"));
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
 }
 
 // ---- Auth ---------------------------------------------------------------
