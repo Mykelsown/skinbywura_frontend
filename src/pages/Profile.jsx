@@ -27,7 +27,7 @@ export default function Profile() {
             <h3>Account details</h3>
             <dl>
               <div><dt>Email</dt><dd>{user.email}</dd></div>
-              <div><dt>Member since</dt><dd>{new Date(user.joined).toLocaleDateString()}</dd></div>
+              <div><dt>Member since</dt><dd>{new Date(user.created_at || user.joined || Date.now()).toLocaleDateString()}</dd></div>
             </dl>
             <Link to="/settings" className="btn btn-sm" style={{ marginTop: 18 }}>Edit settings</Link>
           </div>
