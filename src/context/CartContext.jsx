@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useAuth } from "./AuthContext.jsx";
 import * as api from "../lib/api.js";
 
@@ -10,6 +10,9 @@ export function CartProvider({ children }) {
   const [wishlist, setWishlist] = useState([]);
   const [isCartOpen, setCartOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  // Saves run one after another so an older request can never overwrite a newer one.
+  const saveQueue = useRef(Promise.resolve());
+  const latestItems = useRef([]);
 
   useEffect(() => {
     if (!user) {
@@ -40,14 +43,18 @@ export function CartProvider({ children }) {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+    // Reload only when a different person signs in, not when the same user object is refreshed.
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user || !loaded) return;
 
-    api.saveCart(items).catch(() => {
-      /* no-op: cart remains optimistic in local state until reload */
-    });
+    latestItems.current = items;
+    saveQueue.current = saveQueue.current
+      .then(() => api.saveCart(items))
+      .catch(() => {
+        /* cart stays in local state; the next change retries */
+      });
   }, [items, user, loaded]);
 
   useEffect(() => {
@@ -105,6 +112,19 @@ export function CartProvider({ children }) {
     setItems([]);
   }, [user]);
 
+  // Waits for any pending cart save, saves the latest cart, then creates the order.
+  // Without this wait, checkout could read an older cart from the server.
+  const placeOrder = useCallback(
+    async (details) => {
+      await saveQueue.current;
+      await api.saveCart(latestItems.current);
+      const order = await api.checkout(details);
+      setItems([]);
+      return order;
+    },
+    []
+  );
+
   const toggleWishlist = useCallback((product) => {
     if (!user) {
       window.alert("Please sign in to save your wishlist.");
@@ -147,6 +167,7 @@ export function CartProvider({ children }) {
     removeItem,
     updateQty,
     clearCart,
+    placeOrder,
     toggleWishlist,
     openCart: () => setCartOpen(true),
     closeCart: () => setCartOpen(false),

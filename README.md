@@ -1,52 +1,28 @@
-# SkinByWura — React rebuild
+# SkinByWura storefront
 
-A from-scratch React + Vite rebuild of the original HTML/Tailwind/JS SkinByWura site,
-restyled as a bolder, Gen-Z-leaning cosmetics e-commerce experience.
+React 18 + Vite. Talks to the Go API through relative `/api/...` calls.
 
-## What changed from the original
+## Run locally
 
-- **Stack:** plain HTML/Tailwind/vanilla JS → React (Vite) + React Router + hand-written CSS (no Tailwind).
-- **Design:** restyled around a custom token system (peach/coral/lime/emerald/ink) with a
-  signature scrolling "ticker" band, sticker-style offset shadows, and Fraunces + Inter type pairing.
-  See `src/styles/tokens.css` for the full palette and `/mnt/skills` design brief this followed.
-- **Architecture:** cart, wishlist and auth state live in React Context (`src/context`) and read/write
-  through a single `src/lib/api.js` module. Everything currently persists to `localStorage`, but every
-  function returns a Promise — swap the body of each function for a real `fetch()` call when a backend
-  is ready, and no component code needs to change.
-- **Pages:** Home, Products (filter + sort + search), Product detail, About, Contact, Reviews,
-  Login, Signup, Forgot password, Profile, Settings, 404.
+1. Start the API on port 8080 (see the backend repo).
+2. `npm install`
+3. `npm run dev` and open http://localhost:5173. Vite proxies `/api` to the API.
 
-## Getting started
+## Build
 
-```bash
-npm install
-npm run dev
-```
+`npm run build` writes the site to `dist/`.
 
-Then open the printed local URL (usually http://localhost:5173).
+## Configuration
 
-To build for production:
+Copy `.env.example` to `.env.local`. All `VITE_` values are optional: anything empty is hidden, so the site never shows made-up details. See `CONTENT_CHECKLIST.md` for what to fill in before launch.
 
-```bash
-npm run build
-npm run preview
-```
+## Deploy
 
-## Project structure
+Hosted on Vercel. `vercel.json` forwards `/api/*` to the Render API and falls back to `index.html` for page refreshes. Replace the placeholder Render address in `vercel.json` first. Full steps are in the backend repo's `DEPLOY.md`.
 
-```
-src/
-  components/   Header, Footer, CartDrawer, ProductCard, Ticker
-  context/      CartContext, AuthContext
-  data/         products.js, reviews.js (swap for API calls later)
-  lib/          api.js (storage/backend abstraction), format.js
-  pages/        one file + matching CSS per route
-  styles/       tokens.css (design tokens), global.css (shared layout/utility classes)
-```
+## Where things live
 
-## Next steps if you wire up a real backend
-
-1. Replace the bodies of the functions in `src/lib/api.js` with `fetch()` calls to your API.
-2. Replace `src/data/products.js` with a call to `fetchProducts()` (e.g. inside `Products.jsx`
-   and `Home.jsx`, fetch into state instead of importing the static array directly).
-3. Add real checkout/payment handling where `CartDrawer.jsx` currently has a static "Checkout" button.
+- `src/lib/api.js`: every network call.
+- `src/config/site.js`: contact details, social links, payment note, reviews switch.
+- `src/context/`: sign-in state and the cart.
+- `public/images/`: product and page images.

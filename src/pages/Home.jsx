@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Ticker from "../components/Ticker.jsx";
 import ProductCard from "../components/ProductCard.jsx";
 import reviews from "../data/reviews.js";
+import { SITE } from "../config/site.js";
 import { fetchProducts } from "../lib/api.js";
 import "./Home.css";
 
@@ -32,9 +33,10 @@ export default function Home() {
     };
   }, []);
 
-  const featured = products.filter((p) => p.badge === "Best Seller").concat(
-    products.filter((p) => p.badge === "New")
-  ).slice(0, 4);
+  // Badged products first (set in the catalogue), then fill up with the rest.
+  const badged = products.filter((p) => p.badge);
+  const unbadged = products.filter((p) => !p.badge);
+  const featured = [...badged, ...unbadged].slice(0, 4);
 
   return (
     <div>
@@ -46,8 +48,8 @@ export default function Home() {
               Skin that glows <em>louder</em> than the room.
             </h1>
             <p>
-              SkinByWura hand-picks clinical-grade skincare from trusted producers and brings it
-              to you in one place. No filler ingredients, no whispering, just visible glow from week one.
+              SkinByWura hand-picks skincare from brands we trust and brings it to you in one
+              place, so building a routine that suits your skin is simple.
             </p>
             <div className="hero-actions">
               <Link to="/products" className="btn btn-coral">Shop the drop</Link>
@@ -55,22 +57,22 @@ export default function Home() {
             </div>
             <div className="hero-stats">
               <div>
-                <strong>12k+</strong>
-                <span>Glowed-up customers</span>
+                <strong>Curated</strong>
+                <span>Hand-picked brands</span>
               </div>
               <div>
-                <strong>4.8★</strong>
-                <span>Average rating</span>
+                <strong>Simple</strong>
+                <span>Track your orders online</span>
               </div>
               <div>
-                <strong>100%</strong>
-                <span>Cruelty-free</span>
+                <strong>Human</strong>
+                <span>Support by email</span>
               </div>
             </div>
           </div>
           <div className="hero-media">
             <img src="/images/hero-image.jpg" alt="SkinByWura model with glowing skin" />
-            <span className="hero-sticker badge badge-lime">Fresh drop ✦ this week</span>
+            <span className="hero-sticker badge badge-lime">New in ✦</span>
           </div>
         </div>
       </section>
@@ -81,8 +83,8 @@ export default function Home() {
         <div className="container">
           <div className="section-head">
             <span className="eyebrow">Fan favourites</span>
-            <h2>The shelf everyone's restocking</h2>
-            <p>The four products our community can't stop reordering, picked fresh this month.</p>
+            <h2>Start here</h2>
+            <p>A few picks from the shelf.</p>
           </div>
           {loading ? (
             <p>Loading products...</p>
@@ -108,18 +110,17 @@ export default function Home() {
             <span className="eyebrow">Why we exist</span>
             <h2>Sourced for skin that's been told "that won't work for you."</h2>
             <p>
-              We started SkinByWura after years of struggling to find products that actually
-              respected melanin-rich skin. So we built a marketplace instead, vetting every brand
-              we stock and testing each product on real Nigerian skin tones, in real Lagos
-              humidity, before it ever reaches your bathroom shelf.
+              Finding skincare that works for melanin-rich skin shouldn't take guesswork. SkinByWura
+              brings together products from brands we trust, so you can shop them in one place.
             </p>
             <Link to="/about" className="btn btn-outline">Read the full story</Link>
           </div>
         </div>
       </section>
 
-      <Ticker words={["NO PARABENS", "NO SULFATES", "DERMATOLOGIST APPROVED", "VETTED BRANDS", "REAL RESULTS"]} />
+      <Ticker words={["CURATED SKINCARE", "TRUSTED BRANDS", "BUILT FOR YOUR ROUTINE", "GLOW YOUR WAY"]} />
 
+      {SITE.showReviews && (
       <section className="section">
         <div className="container">
           <div className="section-head">
@@ -141,6 +142,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
     </div>
   );
 }

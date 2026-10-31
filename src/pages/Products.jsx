@@ -16,7 +16,8 @@ export default function Products() {
   const [products, setProducts] = useState([]);
   const [category, setCategory] = useState(searchParams.get("category") || "All");
   const [sort, setSort] = useState("featured");
-  const [maxPrice, setMaxPrice] = useState(15000);
+  // null means "no cap": the slider follows the most expensive product in the catalogue.
+  const [maxPriceChoice, setMaxPriceChoice] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const query = searchParams.get("q") || "";
@@ -48,6 +49,12 @@ export default function Products() {
     };
   }, []);
 
+  const priceCeiling = useMemo(() => {
+    const top = products.reduce((m, p) => Math.max(m, p.price), 0);
+    return Math.max(1000, Math.ceil(top / 500) * 500);
+  }, [products]);
+  const maxPrice = maxPriceChoice === null ? priceCeiling : Math.min(maxPriceChoice, priceCeiling);
+
   const categories = ["All", ...Array.from(new Set(products.map((p) => p.category)))];
 
   const filtered = useMemo(() => {
@@ -76,7 +83,7 @@ export default function Products() {
         break;
     }
     return list;
-  }, [category, sort, maxPrice, query]);
+  }, [products, category, sort, maxPrice, query]);
 
   function selectCategory(cat) {
     setCategory(cat);
@@ -128,11 +135,11 @@ export default function Products() {
             <h4>Max price</h4>
             <input
               type="range"
-              min="4000"
-              max="15000"
+              min="0"
+              max={priceCeiling}
               step="500"
               value={maxPrice}
-              onChange={(e) => setMaxPrice(Number(e.target.value))}
+              onChange={(e) => setMaxPriceChoice(Number(e.target.value))}
             />
             <p className="filter-price-label">Up to ₦{maxPrice.toLocaleString()}</p>
           </aside>

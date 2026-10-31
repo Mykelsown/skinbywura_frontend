@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { SITE, whatsappLink } from "../config/site.js";
 import "./Footer.css";
 
 export default function Footer() {
@@ -7,12 +8,12 @@ export default function Footer() {
       <div className="container footer-grid">
         <div className="footer-brand">
           <span className="brand">SkinByWura</span>
-          <p>Bold, joyful skincare curated for melanin-rich skin. Hand-picked from trusted makers, shipped from Lagos.</p>
+          <p>Bold, joyful skincare curated for melanin-rich skin. Hand-picked from brands we trust.</p>
           <div className="footer-social">
-            <a href="#" aria-label="Instagram">IG</a>
-            <a href="#" aria-label="TikTok">TT</a>
-            <a href="#" aria-label="Twitter">X</a>
-            <a href="#" aria-label="WhatsApp">WA</a>
+            {SITE.instagram && <a href={SITE.instagram} target="_blank" rel="noreferrer" aria-label="Instagram">IG</a>}
+            {SITE.tiktok && <a href={SITE.tiktok} target="_blank" rel="noreferrer" aria-label="TikTok">TT</a>}
+            {SITE.twitter && <a href={SITE.twitter} target="_blank" rel="noreferrer" aria-label="X (Twitter)">X</a>}
+            {SITE.whatsapp && <a href={whatsappLink()} target="_blank" rel="noreferrer" aria-label="WhatsApp">WA</a>}
           </div>
         </div>
 
@@ -20,9 +21,9 @@ export default function Footer() {
           <h4>Shop</h4>
           <ul>
             <li><Link to="/products">All Products</Link></li>
-            <li><Link to="/products?category=Serums">Serums</Link></li>
-            <li><Link to="/products?category=Moisturisers">Moisturisers</Link></li>
-            <li><Link to="/reviews">Reviews</Link></li>
+            <li><Link to="/products?category=Serum">Serums</Link></li>
+            <li><Link to="/products?category=Moisturiser">Moisturisers</Link></li>
+            {SITE.showReviews && <li><Link to="/reviews">Reviews</Link></li>}
           </ul>
         </div>
 
@@ -35,24 +36,18 @@ export default function Footer() {
           </ul>
         </div>
 
-        <div className="footer-col footer-newsletter">
-          <h4>Stay in the glow</h4>
-          <p>New drops, restocks and skin tips, once a week.</p>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.target.reset();
-            }}
-          >
-            <input type="email" required placeholder="you@email.com" aria-label="Email address" />
-            <button className="btn btn-lime btn-sm" type="submit">Join</button>
-          </form>
+        <div className="footer-col">
+          <h4>Need help?</h4>
+          <ul>
+            <li><Link to="/contact">Send us a message</Link></li>
+            {SITE.contactEmail && <li><a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a></li>}
+          </ul>
         </div>
       </div>
 
       <div className="container footer-bottom">
         <p>© {new Date().getFullYear()} SkinByWura. All rights reserved.</p>
-        <p>Lagos, Nigeria</p>
+        <p>{SITE.location}</p>
       </div>
     </footer>
   );

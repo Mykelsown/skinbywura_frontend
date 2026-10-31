@@ -1,10 +1,10 @@
 const DEFAULT_WORDS = [
-  "VITAMIN C",
+  "CURATED SKINCARE",
   "BARE SKIN",
   "GOLDEN HOUR GLOW",
-  "CURATED IN LAGOS",
+  "HAND-PICKED BRANDS",
   "CONFIDENCE, DELIVERED",
-  "TRUSTED BRANDS ONLY",
+  "GLOW YOUR WAY",
 ];
 
 export default function Ticker({ words = DEFAULT_WORDS }) {

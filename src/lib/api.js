@@ -1,34 +1,37 @@
 // ---------------------------------------------------------------------------
-// API abstraction layer.
-//
-// Live product calls route to the Go backend while the rest of the app remains
-// backed by localStorage until the other endpoints are implemented.
+// API layer. Every network call in the app goes through this file.
+// Paths are relative (/api/...): in development Vite proxies them to the Go server,
+// in production Vercel rewrites them to the API, so cookies stay first-party.
 // ---------------------------------------------------------------------------
 
-const STORAGE_KEYS = {
-  cart: "sbw_cart",
-  wishlist: "sbw_wishlist",
-};
-
-function read(key, fallback) {
+async function parseError(response, fallbackMessage) {
   try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
+    const payload = await response.json();
+    return payload?.error || fallbackMessage;
   } catch {
-    return fallback;
+    return fallbackMessage;
   }
 }
 
-function write(key, value) {
+async function request(path, { method = "GET", body, fallback = "Something went wrong" } = {}) {
+  let response;
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    response = await fetch(path, {
+      method,
+      credentials: "include",
+      headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
   } catch {
-    /* storage unavailable, fail silently */
+    throw new Error("Could not reach the server. Check your connection and try again.");
   }
+  return { response, fallback };
 }
 
-function delay(ms = 150) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+async function json(path, options) {
+  const { response, fallback } = await request(path, options);
+  if (!response.ok) throw new Error(await parseError(response, fallback));
+  return response.json();
 }
 
 // ---- Products --------------------------------------------------------
@@ -52,195 +55,89 @@ function normalizeProducts(data) {
 }
 
 export async function fetchProducts() {
-  const response = await fetch("/api/products");
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch products: ${response.status}`);
-  }
-
-  const data = await response.json();
+  const data = await json("/api/products", { fallback: "Unable to load products" });
   return normalizeProducts(data);
 }
 
 export async function fetchProductById(id) {
-  const response = await fetch(`/api/products/${id}`);
-
-  if (!response.ok) {
-    if (response.status === 404) return null;
-    throw new Error(`Failed to fetch product ${id}: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return normalizeProduct(data);
+  const { response } = await request(`/api/products/${id}`);
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(await parseError(response, "Unable to load product"));
+  return normalizeProduct(await response.json());
 }
 
-// ---- Cart --------------------------------------------------------------
+// ---- Cart and wishlist (whole-list replace) ----------------------------
 
-export async function getCart() {
-  const response = await fetch("/api/cart", { credentials: "include" });
-
+async function listOrEmpty(path, fallback) {
+  const { response } = await request(path, { fallback });
   if (response.status === 401) return [];
-  if (!response.ok) {
-    throw new Error(await parseError(response, "Unable to load cart"));
-  }
-
+  if (!response.ok) throw new Error(await parseError(response, fallback));
   const data = await response.json();
   return Array.isArray(data) ? data : [];
 }
+
+export const getCart = () => listOrEmpty("/api/cart", "Unable to load cart");
+export const getWishlist = () => listOrEmpty("/api/wishlist", "Unable to load wishlist");
+export const fetchOrders = () => listOrEmpty("/api/orders", "Unable to load orders");
 
 export async function saveCart(items) {
-  const response = await fetch("/api/cart", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(items),
-  });
-
-  if (!response.ok) {
-    throw new Error(await parseError(response, "Unable to save cart"));
-  }
-
-  const data = await response.json();
-  return Array.isArray(data) ? data : [];
-}
-
-// ---- Wishlist ------------------------------------------------------------
-
-export async function getWishlist() {
-  const response = await fetch("/api/wishlist", { credentials: "include" });
-
-  if (response.status === 401) return [];
-  if (!response.ok) {
-    throw new Error(await parseError(response, "Unable to load wishlist"));
-  }
-
-  const data = await response.json();
+  const data = await json("/api/cart", { method: "PUT", body: items, fallback: "Unable to save cart" });
   return Array.isArray(data) ? data : [];
 }
 
 export async function saveWishlist(items) {
-  const response = await fetch("/api/wishlist", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(items),
-  });
-
-  if (!response.ok) {
-    throw new Error(await parseError(response, "Unable to save wishlist"));
-  }
-
-  const data = await response.json();
+  const data = await json("/api/wishlist", { method: "PUT", body: items, fallback: "Unable to save wishlist" });
   return Array.isArray(data) ? data : [];
 }
 
-export async function checkout() {
-  const response = await fetch("/api/orders", {
-    method: "POST",
-    credentials: "include",
-  });
+// ---- Orders ----------------------------------------------------------------
 
-  if (!response.ok) {
-    throw new Error(await parseError(response, "Unable to complete checkout"));
-  }
-
-  const data = await response.json();
-  return data || null;
-}
-
-export async function fetchOrders() {
-  const response = await fetch("/api/orders", { credentials: "include" });
-
-  if (response.status === 401) return [];
-  if (!response.ok) {
-    throw new Error(await parseError(response, "Unable to load orders"));
-  }
-
-  const data = await response.json();
-  return Array.isArray(data) ? data : [];
+// details: { name, phone, address, city, state, notes }
+export function checkout(details) {
+  return json("/api/orders", { method: "POST", body: details, fallback: "Unable to place your order" });
 }
 
 // ---- Auth ---------------------------------------------------------------
 
-async function parseError(response, fallbackMessage) {
-  try {
-    const payload = await response.json();
-    return payload?.error || fallbackMessage;
-  } catch {
-    return fallbackMessage;
-  }
-}
-
 export async function getCurrentUser() {
-  const response = await fetch("/api/auth/me", { credentials: "include" });
-
-  if (response.status === 401) {
-    return null;
-  }
-
-  if (!response.ok) {
-    throw new Error(await parseError(response, "Unable to load account"));
-  }
-
+  const { response } = await request("/api/auth/me");
+  if (response.status === 401) return null;
+  if (!response.ok) throw new Error(await parseError(response, "Unable to load account"));
   return response.json();
 }
 
-export async function login({ email, password }) {
-  const response = await fetch("/api/auth/login", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify({ email, password }),
-  });
+export const login = ({ email, password }) =>
+  json("/api/auth/login", { method: "POST", body: { email, password }, fallback: "Invalid email or password" });
 
-  if (!response.ok) {
-    throw new Error(await parseError(response, "invalid email or password"));
-  }
-
-  return response.json();
-}
-
-export async function signup({ name, email, password }) {
-  const response = await fetch("/api/auth/signup", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify({ name, email, password }),
-  });
-
-  if (!response.ok) {
-    throw new Error(await parseError(response, "Unable to create account"));
-  }
-
-  return response.json();
-}
+export const signup = ({ name, email, password }) =>
+  json("/api/auth/signup", { method: "POST", body: { name, email, password }, fallback: "Unable to create account" });
 
 export async function logout() {
-  const response = await fetch("/api/auth/logout", {
-    method: "POST",
-    credentials: "include",
-  });
-
-  if (!response.ok) {
-    throw new Error(await parseError(response, "Failed to log out"));
-  }
-
+  await json("/api/auth/logout", { method: "POST", fallback: "Failed to log out" });
   return true;
 }
 
-export async function requestPasswordReset({ email }) {
-  await delay(400);
-  return { ok: true, email };
-}
+export const updateProfile = ({ name }) =>
+  json("/api/auth/me", { method: "PATCH", body: { name }, fallback: "Unable to save your name" });
+
+export const changePassword = ({ currentPassword, newPassword }) =>
+  json("/api/auth/change-password", {
+    method: "POST",
+    body: { current_password: currentPassword, new_password: newPassword },
+    fallback: "Unable to change password",
+  });
+
+export const requestPasswordReset = ({ email }) =>
+  json("/api/auth/forgot-password", { method: "POST", body: { email }, fallback: "Unable to send reset link" });
+
+export const resetPassword = ({ token, newPassword }) =>
+  json("/api/auth/reset-password", {
+    method: "POST",
+    body: { token, new_password: newPassword },
+    fallback: "Unable to reset password",
+  });
 
 // ---- Contact -------------------------------------------------------------
 
-export async function submitContactForm(payload) {
-  await delay(500);
-  // In production this would POST to /api/contact.
-  return { ok: true, receivedAt: new Date().toISOString(), payload };
-}
+export const submitContactForm = ({ name, email, topic, message }) =>
+  json("/api/contact", { method: "POST", body: { name, email, topic, message }, fallback: "Unable to send your message" });

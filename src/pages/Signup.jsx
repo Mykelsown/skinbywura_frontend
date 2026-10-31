@@ -18,8 +18,8 @@ export default function Signup() {
     e.preventDefault();
     setError("");
 
-    if (!form.name.trim() || !form.email.trim() || form.password.trim().length < 6) {
-      setError("Fill every field — passwords need at least 6 characters.");
+    if (!form.name.trim() || !form.email.trim() || form.password.length < 8) {
+      setError("Fill every field. Passwords need at least 8 characters.");
       return;
     }
 
@@ -39,7 +39,7 @@ export default function Signup() {
     <div className="auth-page">
       <div className="auth-card">
         <h1>Create your account</h1>
-        <p className="auth-sub">Join the glow club for faster checkout and order history.</p>
+        <p className="auth-sub">Create an account for faster checkout and to keep track of your orders.</p>
 
         <form className="auth-form" onSubmit={handleSubmit}>
           {error && <div className="success-banner" style={{ background: "var(--coral)" }}>{error}</div>}
@@ -53,7 +53,7 @@ export default function Signup() {
           </div>
           <div className="form-field">
             <label htmlFor="password">Password</label>
-            <input id="password" type="password" value={form.password} onChange={update("password")} />
+            <input id="password" type="password" minLength={8} maxLength={72} autoComplete="new-password" value={form.password} onChange={update("password")} />
           </div>
           <button className="btn btn-coral" type="submit" disabled={loading} style={{ width: "100%" }}>
             {loading ? "Creating account…" : "Create account"}

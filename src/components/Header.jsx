@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { SITE } from "../config/site.js";
 import "./Header.css";
 
 const NAV_LINKS = [
   { to: "/", label: "Home" },
   { to: "/products", label: "Shop" },
-  { to: "/reviews", label: "Reviews" },
+  ...(SITE.showReviews ? [{ to: "/reviews", label: "Reviews" }] : []),
   { to: "/about", label: "About" },
   { to: "/contact", label: "Contact" },
 ];

@@ -1,8 +1,29 @@
 import { useMemo, useState } from "react";
 import reviewData from "../data/reviews.js";
+import { Link } from "react-router-dom";
+import { SITE } from "../config/site.js";
 import "./Reviews.css";
 
 export default function Reviews() {
+  return SITE.showReviews ? <ReviewsList /> : <ComingSoon />;
+}
+
+function ComingSoon() {
+  return (
+    <div className="section reviews-page">
+      <div className="container">
+        <div className="section-head">
+          <span className="eyebrow">Reviews</span>
+          <h2>Reviews are coming soon</h2>
+          <p>We will publish verified customer reviews here once we have them.</p>
+        </div>
+        <div className="section-cta"><Link to="/products" className="btn">Browse products</Link></div>
+      </div>
+    </div>
+  );
+}
+
+function ReviewsList() {
   const [filter, setFilter] = useState(0);
 
   const avg = useMemo(

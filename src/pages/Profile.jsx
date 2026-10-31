@@ -6,6 +6,14 @@ import { fetchOrders } from "../lib/api.js";
 import { formatNaira } from "../lib/format.js";
 import "./Account.css";
 
+const STATUS_LABEL = {
+  pending: "Awaiting confirmation",
+  confirmed: "Confirmed",
+  shipped: "Shipped",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
+};
+
 export default function Profile() {
   const { user, loading, logout } = useAuth();
   const { wishlist } = useCart();
@@ -38,7 +46,7 @@ export default function Profile() {
             <h3>Account details</h3>
             <dl>
               <div><dt>Email</dt><dd>{user.email}</dd></div>
-              <div><dt>Member since</dt><dd>{new Date(user.created_at || user.joined || Date.now()).toLocaleDateString()}</dd></div>
+              <div><dt>Member since</dt><dd>{user.created_at ? new Date(user.created_at).toLocaleDateString() : ""}</dd></div>
             </dl>
             <Link to="/settings" className="btn btn-sm" style={{ marginTop: 18 }}>Edit settings</Link>
           </div>
@@ -69,7 +77,7 @@ export default function Profile() {
             ) : (
               <ul className="wishlist-list">
                 {orders.map((order) => {
-                  const itemCount = order.items.reduce((sum, item) => sum + item.qty, 0);
+                  const itemCount = (order.items || []).reduce((sum, item) => sum + item.qty, 0);
                   return (
                     <li key={order.id}>
                       <div>
@@ -77,7 +85,7 @@ export default function Profile() {
                         <span>{new Date(order.created_at).toLocaleDateString()}</span>
                       </div>
                       <div>
-                        <span>{order.status}</span>
+                        <span>{STATUS_LABEL[order.status] || order.status}</span>
                         <span>{formatNaira(order.total)}</span>
                       </div>
                       <small>{itemCount} item{itemCount === 1 ? "" : "s"}</small>

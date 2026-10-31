@@ -39,11 +39,21 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await api.logout();
-    setUser(null);
+    try {
+      await api.logout();
+    } finally {
+      // Even if the server call fails (expired session, offline), sign out locally.
+      setUser(null);
+    }
   }, []);
 
-  const value = { user, loading, login, signup, logout };
+  const refresh = useCallback(async () => {
+    const u = await api.getCurrentUser();
+    setUser(u);
+    return u;
+  }, []);
+
+  const value = { user, loading, login, signup, logout, refresh };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

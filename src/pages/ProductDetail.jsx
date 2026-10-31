@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
 import reviews from "../data/reviews.js";
+import { SITE } from "../config/site.js";
 import { useCart } from "../context/CartContext.jsx";
 import { fetchProductById, fetchProducts } from "../lib/api.js";
 import { formatNaira } from "../lib/format.js";
@@ -69,11 +70,13 @@ export default function ProductDetail() {
           <div className="product-detail-info">
             <span className="eyebrow">{product.category}</span>
             <h1>{product.name}</h1>
-            <div className="stars" aria-label={`Rated ${product.rating} out of 5`}>
-              {"★".repeat(Math.round(product.rating))}
-              {"☆".repeat(5 - Math.round(product.rating))}
-              <span className="review-count">{product.rating} ({product.reviewCount} reviews)</span>
-            </div>
+            {product.reviewCount > 0 && (
+              <div className="stars" aria-label={`Rated ${product.rating} out of 5`}>
+                {"★".repeat(Math.round(product.rating))}
+                {"☆".repeat(5 - Math.round(product.rating))}
+                <span className="review-count">{product.rating} ({product.reviewCount} reviews)</span>
+              </div>
+            )}
 
             <div className="price-row">
               <span className="price-large">{formatNaira(product.price)}</span>
@@ -108,7 +111,7 @@ export default function ProductDetail() {
           </div>
         </div>
 
-        {productReviews.length > 0 && (
+        {SITE.showReviews && productReviews.length > 0 && (
           <div className="product-reviews">
             <h2>What customers say</h2>
             <div className="review-teaser-grid">

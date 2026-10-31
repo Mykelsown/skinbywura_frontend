@@ -28,11 +28,13 @@ export default function ProductCard({ product }) {
         </button>
       </Link>
       <div className="product-card-body">
+        {product.reviewCount > 0 && (
         <div className="stars" aria-label={`Rated ${product.rating} out of 5`}>
           {"★".repeat(Math.round(product.rating))}
           {"☆".repeat(5 - Math.round(product.rating))}
           <span className="review-count">({product.reviewCount})</span>
         </div>
+        )}
         <Link to={`/products/${product.id}`}>
           <h3 className="product-card-name">{product.name}</h3>
         </Link>

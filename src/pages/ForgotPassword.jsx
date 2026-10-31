@@ -6,12 +6,19 @@ import "./Auth.css";
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("idle");
+  const [error, setError] = useState("");
 
   async function handleSubmit(e) {
     e.preventDefault();
     setStatus("sending");
-    await api.requestPasswordReset({ email });
-    setStatus("sent");
+    setError("");
+    try {
+      await api.requestPasswordReset({ email });
+      setStatus("sent");
+    } catch (err) {
+      setError(err.message);
+      setStatus("idle");
+    }
   }
 
   return (
@@ -22,16 +29,17 @@ export default function ForgotPassword() {
 
         {status === "sent" ? (
           <div className="success-banner" style={{ marginTop: 26 }}>
-            If an account exists for {email}, a reset link is on its way.
+            If an account exists for {email}, a reset link is on its way. It expires in one hour.
           </div>
         ) : (
           <form className="auth-form" onSubmit={handleSubmit}>
+            {error && <div className="success-banner" style={{ background: "var(--coral)" }}>{error}</div>}
             <div className="form-field">
               <label htmlFor="email">Email</label>
               <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <button className="btn btn-coral" type="submit" disabled={status === "sending"} style={{ width: "100%" }}>
-              {status === "sending" ? "Sending…" : "Send reset link"}
+              {status === "sending" ? "Sending..." : "Send reset link"}
             </button>
           </form>
         )}
